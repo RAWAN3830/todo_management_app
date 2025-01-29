@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../model/task_model.dart';
 import '../services/database_connection.dart';
+import '../services/responsive_breakpoint.dart';
 import 'add_task_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -22,8 +23,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void fetchTasks() async {
     final tasks = await DatabaseRepo.getRecords();
-    setState( () {
-       toDoList = tasks.where((task) => !task.isCompleted).toList();
+    setState(() {
+      toDoList = tasks.where((task) => !task.isCompleted).toList();
       completedList = tasks.where((task) => task.isCompleted).toList();
     });
   }
@@ -62,14 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(title: Text('Todo app Screen')),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          if (constraints.maxWidth > 600) {
-            // Tablet layout
-            return buildTabletLayout();
-          } else {
-            // Phone layout
-            return buildPhoneLayout();
-          }
-        },
+          return buildListLayout();},
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => navigateToAddTaskScreen(),
@@ -78,7 +72,15 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget buildPhoneLayout() {
+  // Widget buildResponsiveLayout() {
+  //   if (Responsive.isMobile(context)) {
+  //     return buildListLayout();
+  //   } else {
+  //     return buildGridLayout();
+  //   }
+  // }
+
+  Widget buildListLayout() {
     return Column(
       children: [
         Expanded(
@@ -153,48 +155,46 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget buildTabletLayout() {
+  Widget buildGridLayout() {
     return Column(
       children: [
-        Expanded(
-          child: GridView.builder(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 3,
-            ),
-            itemCount: toDoList.length,
-            itemBuilder: (context, index) {
-              final task = toDoList[index];
-              return Card(
-                margin: const EdgeInsets.all(10.0),
-                child: ListTile(
-                  title: Text(task.title),
-                  subtitle: Text('${task.time} '),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () => navigateToAddTaskScreen(task: task),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => deleteTask(task.id!),
-                      ),
-                      Checkbox(
-                        value: task.isCompleted,
-                        onChanged: (bool? value) {
-                          if (value != null) {
-                            updateTaskStatus(task, value);
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
+        GridView.builder(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 1,
+            childAspectRatio: 2,
           ),
+          itemCount: toDoList.length,
+          itemBuilder: (context, index) {
+            final task = toDoList[index];
+            return Card(
+              margin: const EdgeInsets.all(10.0),
+              child: ListTile(
+                title: Text(task.title),
+                subtitle: Text('${task.date} - ${task.time}'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.edit, color: Colors.blue),
+                      onPressed: () => navigateToAddTaskScreen(task: task),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete, color: Colors.red),
+                      onPressed: () => deleteTask(task.id!),
+                    ),
+                    Checkbox(
+                      value: task.isCompleted,
+                      onChanged: (bool? value) {
+                        if (value != null) {
+                          updateTaskStatus(task, value);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
         Divider(),
         Text('Completed Tasks', style: TextStyle(fontSize: 18)),

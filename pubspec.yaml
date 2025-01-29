@@ -41,6 +41,7 @@ dependencies:
   intl:
   sqflite:
   path_provider:
+  responsive_framework:
 
 dev_dependencies:
   flutter_test:

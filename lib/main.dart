@@ -3,7 +3,7 @@ import 'package:task_management_app/view/home_screen.dart';
 import 'package:task_management_app/services/database_connection.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+   WidgetsFlutterBinding.ensureInitialized();
   await DatabaseRepo.createDB();
   runApp(const MyApp());
 }
@@ -24,4 +24,6 @@ class MyApp extends StatelessWidget {
       home: HomeScreen(),
     );
   }
+
+
 }
