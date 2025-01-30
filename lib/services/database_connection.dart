@@ -1,6 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import '../model/task_model.dart';
+import '../model/task_model/task_model.dart';
 
 class DatabaseRepo {
   static Database? _dbService;

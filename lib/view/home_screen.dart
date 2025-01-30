@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../model/task_model.dart';
+import '../model/task_model/task_model.dart';
 import '../services/database_connection.dart';
 import '../services/responsive_breakpoint.dart';
 import 'add_task_screen.dart';

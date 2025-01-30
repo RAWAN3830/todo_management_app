@@ -1,13 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../model/task_model.dart';
+import '../model/task_model/task_model.dart';
 import '../services/database_connection.dart';
 import '../services/responsive_breakpoint.dart';
-import '../utils/common_heading.dart';
-import '../utils/common_long_text_field.dart';
-import '../utils/app_save_button.dart';
-import '../utils/common_text_field.dart';
+import '../utils/common_widgets/common_heading.dart';
+import '../utils/common_widgets/common_long_text_field.dart';
+import '../utils/common_widgets/app_save_button.dart';
+import '../utils/common_widgets/common_text_field.dart';
 import '../utils/date_time_common_textfield/common_datetime_text_field.dart';
 
 

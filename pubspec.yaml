@@ -38,7 +38,9 @@ dependencies:
   riverpod:
   json_annotation:
   freezed_annotation:
+  flutter_riverpod:
   intl:
+  hive:
   sqflite:
   path_provider:
   responsive_framework:
@@ -47,6 +49,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   build_runner:
+  hive_generator:
   freezed:
   json_serializable:
 
