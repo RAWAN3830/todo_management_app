@@ -177,11 +177,11 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         padding: const EdgeInsets.all(10.0),
         child: Column(
           children: [
-            CommonHeading(title: 'Title'),
+            const CommonHeading(title: 'Title'),
             CommonTextField(labelText: 'Enter title', controller: titleController, errorText: 'Title required'),
             buildSelectDateTime(),
             const SizedBox(height: 10),
-            CommonHeading(title: 'Notes'),
+            const CommonHeading(title: 'Notes'),
             CommonLongTextField(controller: noteController, hintText: 'Enter notes here', errorText: 'Notes required'),
             const SizedBox(height: 10),
             AppSaveButton(formKey: formKey, onTap: saveTask, name: 'Save'),
@@ -204,7 +204,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CommonHeading(title: 'Title'),
+                      const CommonHeading(title: 'Title'),
                       CommonTextField(labelText: 'Enter title', controller: titleController, errorText: 'Title required'),
                     ],
                   ),
@@ -216,7 +216,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               ],
             ),
             const SizedBox(height: 20),
-            CommonHeading(title: 'Notes'),
+            const CommonHeading(title: 'Notes'),
             CommonLongTextField(controller: noteController, hintText: 'Enter notes here', errorText: 'Notes required'),
             const SizedBox(height: 20),
             AppSaveButton(formKey: formKey, onTap: saveTask, name: 'Save'),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:task_management_app/view/home_screen.dart';
+import 'package:task_management_app/view/home_screen/home_screen.dart';
 import 'package:task_management_app/services/database_connection.dart';
 
 void main() async {
@@ -19,9 +19,9 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightGreen),
         useMaterial3: true,
-        appBarTheme: AppBarTheme(color: Colors.lightGreen),
+        appBarTheme: const AppBarTheme(color: Colors.lightGreen),
       ),
-      home: HomeScreen(),
+      home: const HomeScreen(),
     );
   }
 
