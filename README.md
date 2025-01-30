@@ -10,9 +10,6 @@ A **Flutter** application built in **48 hours**, following the **MVVM architectu
 - **State management with Riverpod**
 - **Smooth and intuitive UI/UX**
 
-## Screenshots
-
-(Add screenshots here if available)
 
 ## Installation & Setup
 
