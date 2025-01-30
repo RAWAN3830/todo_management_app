@@ -1,52 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../model/task_model/task_model.dart';
-import '../../services/database_connection.dart';
+import '../../view_model/task_provider.dart';
 import '../add_task_screen.dart';
 import 'task_details.dart';
 
-
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  List<TaskModel> toDoList = [];
-  List<TaskModel> completedList = [];
-
-  @override
-  void initState() {
-    super.initState();
-    fetchTasks();
-  }
-
-  void fetchTasks() async {
-    final tasks = await DatabaseRepo.getRecords();
-    setState(() {
-      toDoList = tasks.where((task) => !task.isCompleted).toList();
-      completedList = tasks.where((task) => task.isCompleted).toList();
-    });
-  }
-
-  void updateTaskStatus(TaskModel task, bool isCompleted) {
-    final updatedTask = task.copyWith(isCompleted: isCompleted);
-    DatabaseRepo.updateRecord(updatedTask).then((_) {
-      fetchTasks();
-    });
-  }
-
-  void deleteTask(int id) {
-    DatabaseRepo.deleteRecord(id).then((_) {
-      fetchTasks();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Task Deleted Successfully!')),
-      );
-    });
-  }
-
-  void navigateToAddTaskScreen({TaskModel? task}) async {
+  void navigateToAddTaskScreen(BuildContext context, {TaskModel? task}) async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -54,11 +16,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
     if (result == true) {
-      fetchTasks();
+      // The provider will handle the refresh
     }
   }
 
-  void showTaskDetails(TaskModel task) {
+  void showTaskDetails(BuildContext context, TaskModel task) {
     showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -68,95 +30,98 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final todoTasks = ref.watch(todoTasksProvider);
+    final completedTasks = ref.watch(completedTasksProvider);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Todo app Screen')),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return buildListLayout();
-        },
+      body: Column(
+        children: [
+          Expanded(
+            child: todoTasks.when(
+              data: (tasks) => ListView.builder(
+                itemCount: tasks.length,
+                itemBuilder: (context, index) {
+                  final task = tasks[index];
+                  return ListTile(
+                    title: Text(task.title),
+                    subtitle: Text('${task.date} - ${task.time}'),
+                    onTap: () => showTaskDetails(context, task),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () => navigateToAddTaskScreen(context, task: task),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => ref.read(taskListProvider.notifier).deleteTask(task.id!),
+                        ),
+                        Checkbox(
+                          value: task.isCompleted,
+                          onChanged: (bool? value) {
+                            if (value != null) {
+                              ref.read(taskListProvider.notifier).toggleTaskStatus(task);
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stack) => Center(child: Text('Error: $error')),
+            ),
+          ),
+          const Divider(),
+          const Text('Completed Tasks', style: TextStyle(fontSize: 18)),
+          Expanded(
+            child: completedTasks.when(
+              data: (tasks) => ListView.builder(
+                itemCount: tasks.length,
+                itemBuilder: (context, index) {
+                  final task = tasks[index];
+                  return ListTile(
+                    title: Text(task.title),
+                    subtitle: Text('${task.date} - ${task.time}'),
+                    onTap: () => showTaskDetails(context, task),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () => navigateToAddTaskScreen(context, task: task),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => ref.read(taskListProvider.notifier).deleteTask(task.id!),
+                        ),
+                        Checkbox(
+                          value: task.isCompleted,
+                          onChanged: (bool? value) {
+                            if (value != null) {
+                              ref.read(taskListProvider.notifier).toggleTaskStatus(task);
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stack) => Center(child: Text('Error: $error')),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => navigateToAddTaskScreen(),
+        onPressed: () => navigateToAddTaskScreen(context),
         child: const Icon(Icons.add),
       ),
-    );
-  }
-
-  Widget buildListLayout() {
-    return Column(
-      children: [
-        Expanded(
-          child: ListView.builder(
-            itemCount: toDoList.length,
-            itemBuilder: (context, index) {
-              final task = toDoList[index];
-              return ListTile(
-                title: Text(task.title),
-                subtitle: Text('${task.date} - ${task.time}'),
-                onTap: () => showTaskDetails(task), // Show task details on tap
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit, color: Colors.blue),
-                      onPressed: () => navigateToAddTaskScreen(task: task),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => deleteTask(task.id!),
-                    ),
-                    Checkbox(
-                      value: task.isCompleted,
-                      onChanged: (bool? value) {
-                        if (value != null) {
-                          updateTaskStatus(task, value);
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-        const Divider(),
-        const Text('Completed Tasks', style: TextStyle(fontSize: 18)),
-        Expanded(
-          child: ListView.builder(
-            itemCount: completedList.length,
-            itemBuilder: (context, index) {
-              final task = completedList[index];
-              return ListTile(
-                title: Text(task.title),
-                subtitle: Text('${task.date} - ${task.time}'),
-                onTap: () => showTaskDetails(task), // Show task details on tap
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit, color: Colors.blue),
-                      onPressed: () => navigateToAddTaskScreen(task: task),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => deleteTask(task.id!),
-                    ),
-                    Checkbox(
-                      value: task.isCompleted,
-                      onChanged: (bool? value) {
-                        if (value != null) {
-                          updateTaskStatus(task, value);
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ],
     );
   }
 }

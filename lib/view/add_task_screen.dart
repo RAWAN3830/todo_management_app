@@ -1,120 +1,131 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../model/task_model/task_model.dart';
-import '../services/database_connection.dart';
 import '../services/responsive_breakpoint.dart';
 import '../utils/common_widgets/common_heading.dart';
 import '../utils/common_widgets/common_long_text_field.dart';
 import '../utils/common_widgets/app_save_button.dart';
 import '../utils/common_widgets/common_text_field.dart';
 import '../utils/date_time_common_textfield/common_datetime_text_field.dart';
+import '../view_model/task_provider.dart';
 
+final titleControllerProvider = StateProvider.autoDispose((ref) => TextEditingController());
+final noteControllerProvider = StateProvider.autoDispose((ref) => TextEditingController());
+final dateControllerProvider = StateProvider.autoDispose((ref) => TextEditingController());
+final timeControllerProvider = StateProvider.autoDispose((ref) => TextEditingController());
+final selectedDateProvider = StateProvider.autoDispose<DateTime?>((ref) => null);
+final selectedTimeProvider = StateProvider.autoDispose<TimeOfDay?>((ref) => null);
 
-class AddTaskScreen extends StatefulWidget {
+class AddTaskScreen extends ConsumerStatefulWidget {
   final TaskModel? task;
 
   const AddTaskScreen({super.key, this.task});
 
   @override
-  State<AddTaskScreen> createState() => _AddTaskScreenState();
+  ConsumerState<AddTaskScreen> createState() => _AddTaskScreenState();
 }
 
-class _AddTaskScreenState extends State<AddTaskScreen> {
+class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-  TextEditingController titleController = TextEditingController();
-  TextEditingController noteController = TextEditingController();
-  TextEditingController dateController = TextEditingController();
-  TextEditingController timeController = TextEditingController();
-  DateTime? selectedDate;
-  TimeOfDay? selectedTime;
 
   @override
   void initState() {
     super.initState();
     if (widget.task != null) {
-      titleController.text = widget.task!.title;
-      noteController.text = widget.task!.note;
-      selectedDate = DateTime.parse(widget.task!.date);
-      selectedTime = TimeOfDay(
-        hour: int.parse(widget.task!.time.split(':')[0]),
-        minute: int.parse(widget.task!.time.split(':')[1]),
-      );
-      dateController.text = formatDate(selectedDate);
-      timeController.text = formatTime(selectedTime);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Initialize controllers with existing task data
+        ref.read(titleControllerProvider.notifier).state.text = widget.task!.title;
+        ref.read(noteControllerProvider.notifier).state.text = widget.task!.note;
+
+        final date = DateTime.parse(widget.task!.date);
+        ref.read(selectedDateProvider.notifier).state = date;
+        ref.read(dateControllerProvider.notifier).state.text = formatDate(date);
+
+        final time = TimeOfDay(
+          hour: int.parse(widget.task!.time.split(':')[0]),
+          minute: int.parse(widget.task!.time.split(':')[1]),
+        );
+        ref.read(selectedTimeProvider.notifier).state = time;
+        ref.read(timeControllerProvider.notifier).state.text = formatTime(time);
+      });
     }
   }
 
   void saveTask() {
     if (formKey.currentState!.validate()) {
+      final titleController = ref.read(titleControllerProvider);
+      final noteController = ref.read(noteControllerProvider);
+      final selectedDate = ref.read(selectedDateProvider);
+      final selectedTime = ref.read(selectedTimeProvider);
+
       final task = TaskModel(
         id: widget.task?.id,
         title: titleController.text,
         note: noteController.text,
         date: selectedDate?.toIso8601String().split('T')[0] ?? '',
-        time: selectedTime != null ? '${selectedTime!.hour}:${selectedTime!.minute}' : '',
+        time: selectedTime != null ? '${selectedTime.hour}:${selectedTime.minute}' : '',
         isCompleted: widget.task?.isCompleted ?? false,
       );
+
       if (widget.task == null) {
-        DatabaseRepo.insertRecord(task).then((_) {
+        ref.read(taskListProvider.notifier).addTask(task).then((_) {
           Navigator.pop(context, true);
         });
       } else {
-        DatabaseRepo.updateRecord(task).then((_) {
+        ref.read(taskListProvider.notifier).updateTask(task).then((_) {
           Navigator.pop(context, true);
         });
       }
     }
   }
 
-  // Format date into "yMMMd" format
   String formatDate(DateTime? date) {
     try {
       return date != null
           ? DateFormat.yMMMd().format(date)
-          : 'Select Date'; // e.g., "Jan 28, 2025"
+          : 'Select Date';
     } catch (e) {
       return DateFormat.yMMMd().format(DateTime.now());
     }
   }
 
-  // Format time into "h:mm a" format with lowercase "am/pm"
   String formatTime(TimeOfDay? time) {
     if (time == null) return 'Select Time';
     final now = DateTime.now();
     final dateTime = DateTime(now.year, now.month, now.day, time.hour, time.minute);
-    return DateFormat('h:mm a').format(dateTime).toLowerCase(); // e.g., "3:34 pm"
+    return DateFormat('h:mm a').format(dateTime).toLowerCase();
   }
 
   Future<void> _pickDate(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: selectedDate ?? DateTime.now(),
+      initialDate: ref.read(selectedDateProvider) ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
     if (pickedDate != null) {
-      setState(() {
-        selectedDate = pickedDate;
-        dateController.text = formatDate(selectedDate);
-      });
+      ref.read(selectedDateProvider.notifier).state = pickedDate;
+      ref.read(dateControllerProvider.notifier).state.text = formatDate(pickedDate);
     }
   }
 
   Future<void> _pickTime(BuildContext context) async {
     final TimeOfDay? pickedTime = await showTimePicker(
       context: context,
-      initialTime: selectedTime ?? TimeOfDay.now(),
+      initialTime: ref.read(selectedTimeProvider) ?? TimeOfDay.now(),
     );
     if (pickedTime != null) {
-      setState(() {
-        selectedTime = pickedTime;
-        timeController.text = formatTime(selectedTime);
-      });
+      ref.read(selectedTimeProvider.notifier).state = pickedTime;
+      ref.read(timeControllerProvider.notifier).state.text = formatTime(pickedTime);
     }
   }
 
   Widget buildSelectDateTime() {
+    final dateController = ref.watch(dateControllerProvider);
+    final timeController = ref.watch(timeControllerProvider);
+
     return Row(
       children: [
         Expanded(
@@ -159,10 +170,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           if (Responsive.isTablet(context) || Responsive.isDesktop(context)) {
-            // Tablet or Desktop layout
             return buildTabletLayout();
           } else {
-            // Phone layout
             return buildPhoneLayout();
           }
         },
@@ -171,6 +180,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   }
 
   Widget buildPhoneLayout() {
+    final titleController = ref.watch(titleControllerProvider);
+    final noteController = ref.watch(noteControllerProvider);
+
     return Form(
       key: formKey,
       child: Padding(
@@ -192,6 +204,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   }
 
   Widget buildTabletLayout() {
+    final titleController = ref.watch(titleControllerProvider);
+    final noteController = ref.watch(noteControllerProvider);
+
     return Form(
       key: formKey,
       child: Padding(
